@@ -1,14 +1,4 @@
-<div align="center">
 
-# Agentic AI Workspace
-
-**A multi-agent workspace for research, search, and synthesis**
-
-<img src="gitimg/1.png" alt="Chat Interface" width="600"/>
-
-<img src="gitimg/2.png" alt="System Overview" width="600"/>
-
-</div>
 
 ## Overview
 
