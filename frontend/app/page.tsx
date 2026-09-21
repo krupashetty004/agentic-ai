@@ -146,6 +146,16 @@ export default function Home() {
       setLoggedInEmail(storedEmail);
       setAuthMessage(`Session live for ${storedEmail || "saved user"}.`);
       appendLog("INFO", `Recovered saved session for ${storedEmail || "saved user"}.`);
+      void fetch(`${BACKEND_URL}/api/v1/auth/me`, {
+        headers: { Authorization: `Bearer ${storedToken}` },
+      }).then((response) => {
+        if (!response.ok) {
+          logout();
+          appendLog("WARN", "Saved session was invalid and has been cleared.");
+        }
+      }).catch(() => {
+        appendLog("WARN", "Could not validate saved session yet.");
+      });
     } else {
       appendLog("WARN", "No saved session detected. Login required.");
     }
@@ -421,6 +431,9 @@ export default function Home() {
     } catch (error) {
       const nextMessage =
         error instanceof Error ? error.message : "Authentication request failed.";
+      if (token) {
+        logout();
+      }
       setAuthMessage(nextMessage);
       appendLog("ERROR", `Authentication failure: ${nextMessage}`);
     } finally {

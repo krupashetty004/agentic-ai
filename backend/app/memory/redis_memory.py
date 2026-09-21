@@ -2,12 +2,15 @@ import json
 from typing import Dict, List, Optional
 
 class RedisMemoryService:
+    _fallback_memory_store: Dict[str, List[Dict[str, str]]] = {}
+    _fallback_kv_store: Dict[str, str] = {}
+
     def __init__(self,url:str, ttl_seconds:int):
         self.url = url
         self.ttl_seconds = ttl_seconds
         self._client = None
-        self._memory_store: Dict[str, List[Dict[str, str]]] = {}
-        self._kv_store: Dict[str, str] = {}
+        self._memory_store = RedisMemoryService._fallback_memory_store
+        self._kv_store = RedisMemoryService._fallback_kv_store
         
         try:
             import importlib
