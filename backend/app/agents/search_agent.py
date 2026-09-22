@@ -1,4 +1,5 @@
 import logging
+import re
 
 from app.config.settings import settings
 from app.models.chat_models import AgentResult, SearchResult
@@ -21,6 +22,28 @@ else:
         return decorator if args and callable(args[0]) else decorator
     
 logger  = logging.getLogger(__name__)
+
+
+def _daily_total_from_document(question: str, snippet: str) -> str | None:
+    weekdays = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"]
+    question_lower = question.lower()
+    weekday = next((day for day in weekdays if day in question_lower), None)
+    if not weekday or "total" not in question_lower or "sales" not in question_lower:
+        return None
+
+    totals_match = re.search(
+        r"DAILY TOTALS\s+((?:\$[\d,]+\.\d{2}\s*){1,7})",
+        snippet,
+        flags=re.IGNORECASE,
+    )
+    if not totals_match:
+        return None
+
+    totals = re.findall(r"\$[\d,]+\.\d{2}", totals_match.group(1))
+    weekday_index = weekdays.index(weekday)
+    if weekday_index >= len(totals):
+        return None
+    return f"Direct table match: {weekday.title()} daily sales total = {totals[weekday_index]}."
 
 class SearchAgent:
     def __init__(self,search_service:SearchService):
@@ -63,6 +86,14 @@ class SearchAgent:
             )
 
         output = "Search results from Elasticsearch:\n" + "\n".join(lines) if lines else "No matching documents found."
+        direct_matches = [
+            match
+            for item in results
+            for match in [_daily_total_from_document(state.user_message, item.snippet)]
+            if match
+        ]
+        if direct_matches:
+            output = "\n".join(direct_matches) + "\n\n" + output
         
         state.search_output = output
         logger.info(
